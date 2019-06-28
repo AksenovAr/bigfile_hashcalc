@@ -11,7 +11,6 @@
 
 struct block_info
 {
-	/* tags for accessing the corresponding indices of input_stream_info set */
 	struct by_number_id {};
 	//-----------------------
 	uintmax_t get_number_id()	const {	return m_number;	}
@@ -33,9 +32,7 @@ struct block_info
 	block_info(block_info const&) = delete;
 	block_info& operator= (block_info const&) = delete;
 
-
 	unsigned char result[MD5_DIGEST_LENGTH];
-
 	std::string m_md5hash; // 32symbols
 	uintmax_t m_number;
 	uintmax_t m_block_size;

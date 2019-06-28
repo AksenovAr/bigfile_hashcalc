@@ -25,12 +25,12 @@ void fileconverter_to_hash::doWork(const cdm_parser& parser)
 	uintmax_t i_balance = length - (m_count_of_threads * i_block_size);
 	if (i_balance) m_count_of_threads++;
 
-	boost::iostreams::mapped_file_source file( s_path_to_input_file, mapped_file_base::mapmode::priv, length+i_balance );
+	file.open(s_path_to_input_file, length+i_balance);
+
 	std::fill( (unsigned char*) file.data()+length, (unsigned char*) file.data()+length+i_balance, '0');
 
 	for (uintmax_t thread_counter = 0; thread_counter < m_count_of_threads; thread_counter++)
 	{
-
 		std::unique_ptr< block_info > info;
 		try
 		{
@@ -39,13 +39,15 @@ void fileconverter_to_hash::doWork(const cdm_parser& parser)
 		catch (std::bad_alloc&)
 		{
 			//throw Imp::ResourceLimitation("Out of memory");
+			std::cout << "Error1";
 		}
 		catch (boost::system::system_error& e)
 		{
-
+			std::cout << "Error1";
 		}
 		catch (std::exception& e)
 		{
+			std::cout << "Error2";
 		}
 
 		info->m_thread = std::thread([self = (this), p = info.get()]() { self->block_reading(p); });
@@ -92,4 +94,10 @@ void fileconverter_to_hash::md5data_to_string()
 	}
 
 	m_output_fun(m_all_block_hash);
+}
+
+fileconverter_to_hash::~fileconverter_to_hash()
+{
+	file.close();
+	std::cout << " Dtor singltone ! \n" ;
 }

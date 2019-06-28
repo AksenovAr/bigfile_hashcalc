@@ -41,7 +41,7 @@ class fileconverter_to_hash
 	void md5data_to_string();
 
 	fileconverter_to_hash() { std::cout << " Ctor singltone ! \n" ;} ;
-	~fileconverter_to_hash() { std::cout << " Dtor singltone ! \n" ;} ;
+	~fileconverter_to_hash();
 
 	typedef std::unique_ptr< block_info > info_ptr;
 
@@ -63,6 +63,7 @@ class fileconverter_to_hash
 	boost::atomic< uint32_t > m_count_of_threads;
 	std::mutex mut;
 	std::condition_variable cv;
+	boost::iostreams::mapped_file_source file;
 
 	fileconverter_to_hash&  operator = (const fileconverter_to_hash& )  = delete;
 	fileconverter_to_hash&  operator = (const fileconverter_to_hash&& ) = delete;
