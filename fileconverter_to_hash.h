@@ -7,6 +7,7 @@
 #include <memory>
 #include <mutex>
 #include <thread>
+#include <condition_variable>
 #include <boost/config.hpp>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/ordered_index.hpp>
@@ -19,9 +20,13 @@ using namespace boost::multi_index;
 
 class cdm_parser;
 
+typedef std::function<void (std::string&)> handler_t;
+
 class fileconverter_to_hash
 {
 	public :
+
+	handler_t m_output_fun;
 
 	static std::shared_ptr<fileconverter_to_hash> getInstance()
 	{
@@ -30,6 +35,7 @@ class fileconverter_to_hash
 		return obj;
 	}
 
+	void add_handler(handler_t& h);
 	void doWork(const cdm_parser& parser);
 	void block_reading(block_info* info);
 	void md5data_to_string();
@@ -55,6 +61,8 @@ class fileconverter_to_hash
 
 	input_stream_list m_threads_container;
 	boost::atomic< uint32_t > m_count_of_threads;
+	std::mutex mut;
+	std::condition_variable cv;
 
 	fileconverter_to_hash&  operator = (const fileconverter_to_hash& )  = delete;
 	fileconverter_to_hash&  operator = (const fileconverter_to_hash&& ) = delete;

@@ -8,6 +8,7 @@
 #include <iterator>
 #include <iomanip>
 #include <sstream>
+#include <functional>
 #include <boost/iostreams/device/mapped_file.hpp>
 
 using namespace boost::iostreams;
@@ -63,17 +64,34 @@ void fileconverter_to_hash::doWork(const cdm_parser& parser)
 
 void fileconverter_to_hash::block_reading(block_info* info)
 {
+	std::unique_lock<std::mutex> lck(mut);
+
 	uintmax_t offset = info->m_block_size * info->m_number;
 	MD5((unsigned char*) info->m_file.data() + offset, info->m_block_size, info->result);
-	m_count_of_threads--;
+
+	--m_count_of_threads;
+	cv.notify_one();
+
+}
+
+void fileconverter_to_hash::add_handler(handler_t& h)
+{
+	m_output_fun = h;
 }
 
 void fileconverter_to_hash::md5data_to_string()
 {
+	std::unique_lock<std::mutex> lck(mut);
+	while(m_count_of_threads != 0)
+	{
+		cv.wait(lck );
+	}
 
 	input_stream_list::iterator it = m_threads_container.begin();
 	for (; it !=  m_threads_container.end(); ++it)
 	{
 		//m_all_block_hash.push_back( std::string((*it)->result) );
 	}
+
+	m_output_fun(m_all_block_hash);
 }
