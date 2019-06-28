@@ -25,7 +25,8 @@ void fileconverter_to_hash::doWork(const cdm_parser& parser)
 	uintmax_t i_balance = length - (m_count_of_threads * i_block_size);
 	if (i_balance) m_count_of_threads++;
 
-	boost::iostreams::mapped_file_source file( s_path_to_input_file );
+	boost::iostreams::mapped_file_source file( s_path_to_input_file, mapped_file_base::mapmode::priv, length+i_balance );
+	std::fill( (unsigned char*) file.data()+length, (unsigned char*) file.data()+length+i_balance, '0');
 
 	for (uintmax_t thread_counter = 0; thread_counter < m_count_of_threads; thread_counter++)
 	{
@@ -41,13 +42,10 @@ void fileconverter_to_hash::doWork(const cdm_parser& parser)
 		}
 		catch (boost::system::system_error& e)
 		{
-			//LOG(log, error) << "Failed to link to buffer " << buffer_name << ": " << boost::diagnostic_information(e) LOG_END;
-			//throw Imp::ErrorOpeningMediaBuffer(e.what());
+
 		}
 		catch (std::exception& e)
 		{
-			//LOG(log, error) << "Failed to link to buffer " << buffer_name << ": " << boost::diagnostic_information(e) LOG_END;
-			//throw Imp::ErrorOpeningMediaBuffer(e.what());
 		}
 
 		info->m_thread = std::thread([self = (this), p = info.get()]() { self->block_reading(p); });
@@ -84,13 +82,13 @@ void fileconverter_to_hash::md5data_to_string()
 	std::unique_lock<std::mutex> lck(mut);
 	while(m_count_of_threads != 0)
 	{
-		cv.wait(lck );
+		cv.wait(lck);
 	}
 
 	input_stream_list::iterator it = m_threads_container.begin();
 	for (; it !=  m_threads_container.end(); ++it)
 	{
-		//m_all_block_hash.push_back( std::string((*it)->result) );
+		m_all_block_hash += std::string(reinterpret_cast<char*>((*it)->result));
 	}
 
 	m_output_fun(m_all_block_hash);

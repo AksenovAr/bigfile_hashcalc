@@ -12,8 +12,16 @@ int main(int argc, const char *argv[])
 {
 	try
 	{
-		handler_t f = [](std::string& s){ std::cout << s << std::endl;};
 		cdm_parser parser(argc, argv);
+
+		handler_t f = [&](std::string& s)
+		{
+			std::cout << s << std::endl;
+			std::ofstream out(parser.get_ouput_file_path());
+			out << s;
+			out.close();
+		};
+
 		std::shared_ptr<fileconverter_to_hash> ptr_obj = fileconverter_to_hash::getInstance();
 		ptr_obj->add_handler(f);
 		ptr_obj->doWork(parser);
