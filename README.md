@@ -27,5 +27,7 @@
     - make -j4
 ### Как скачать с гит хаба 
     git clone https://github.com/AksenovAr/bigfile_hashcalc.git
+### Пример
+./TEST_WEAM --in /home/aksenov/work/imp-testing/data/videoselector_output_file.flv --out hashfile.txt --size 1200
 
- 
+
