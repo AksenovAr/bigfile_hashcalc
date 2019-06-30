@@ -60,7 +60,10 @@ class fileconverter_to_hash
 	uint32_t m_block_size;
 
 	input_stream_list m_threads_container;
-	boost::atomic< uint32_t > m_count_of_threads;
+	boost::atomic< uint32_t > m_countdown_counter_of_threads;
+	bool m_ready;
+
+	uint32_t m_count_of_threads;
 	std::mutex mut;
 	std::condition_variable cv;
 	boost::iostreams::mapped_file_source file;

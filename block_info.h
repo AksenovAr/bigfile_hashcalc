@@ -16,9 +16,8 @@ struct block_info
 	uintmax_t get_number_id()	const {	return m_number;	}
 
 	//! Default constructor
-	explicit block_info( uintmax_t number, uintmax_t block_size, boost::iostreams::mapped_file_source& file )
+	explicit block_info( uintmax_t number, boost::iostreams::mapped_file_source& file )
 		:m_number(number),
-		m_block_size(block_size),
 		m_file(file)
 	{
 	}
@@ -33,9 +32,9 @@ struct block_info
 	block_info& operator= (block_info const&) = delete;
 
 	unsigned char result[MD5_DIGEST_LENGTH];
-	std::string m_md5hash; // 32symbols
 	uintmax_t m_number;
-	uintmax_t m_block_size;
+	static uintmax_t m_block_size;
+	static uintmax_t m_file_lenght;
 	//!
 	boost::iostreams::mapped_file_source& m_file;
 	//! thread
