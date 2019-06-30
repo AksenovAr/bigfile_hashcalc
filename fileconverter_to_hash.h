@@ -31,7 +31,6 @@ class fileconverter_to_hash
 
 	static std::shared_ptr<fileconverter_to_hash> getInstance()
 	{
-		std::cout <<  " Enter in getInstance \n ";
 		static std::shared_ptr<fileconverter_to_hash> obj(new fileconverter_to_hash);
 		return obj;
 	}
@@ -41,7 +40,7 @@ class fileconverter_to_hash
 	void block_reading(block_info* info);
 	void md5data_to_string();
 
-	fileconverter_to_hash() { std::cout << " Ctor singltone ! \n" ;} ;
+	fileconverter_to_hash();
 	~fileconverter_to_hash();
 
 	typedef std::unique_ptr< block_info > info_ptr;

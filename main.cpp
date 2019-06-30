@@ -16,7 +16,7 @@ int main(int argc, const char *argv[])
 
 		handler_t f = [&](std::string& s)
 		{
-			std::cout << s << std::endl;
+			//std::cout << s << std::endl;
 			std::ofstream out(parser.get_ouput_file_path());
 			out << s;
 			out.close();

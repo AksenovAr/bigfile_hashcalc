@@ -24,4 +24,20 @@ private:
 	std::string message;
 };
 
+class fileconverter_exception : public std::exception
+{
+
+public:
+	fileconverter_exception();
+	explicit fileconverter_exception(const std::string& message);
+	fileconverter_exception(const std::string& source, const std::string& message);
+	fileconverter_exception(int code, const std::string& source, const std::string& message);
+	const char *what() const throw();
+
+private:
+	// helper function
+	static std::string make_message(int code, const std::string& source, const std::string& message);
+	std::string message;
+};
+
 #endif // CUSTOM_EXEPTIONS_H

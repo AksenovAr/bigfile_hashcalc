@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(TARGET TEST_WEAM)
-#set(Boost_USE_STATIC_LIBS OFF)
-#sudo apt-get install libboost-iostreams-dev
-#set(Boost_USE_MULTITHREADED ON)
-#set(Boost_USE_STATIC_RUNTIME OFF)
 
 project(test_weam_software)
 

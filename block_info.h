@@ -12,7 +12,7 @@
 struct block_info
 {
 	struct by_number_id {};
-	//-----------------------
+
 	uintmax_t get_number_id()	const {	return m_number;	}
 
 	//! Default constructor
@@ -29,9 +29,13 @@ struct block_info
 
 	// Copying prohibited
 	block_info(block_info const&) = delete;
+	block_info(block_info const&&) = delete;
 	block_info& operator= (block_info const&) = delete;
+	block_info& operator= (block_info const&&) = delete;
 
 	unsigned char result[MD5_DIGEST_LENGTH];
+	std::string hash_in_hex;
+
 	uintmax_t m_number;
 	static uintmax_t m_block_size;
 	static uintmax_t m_file_lenght;

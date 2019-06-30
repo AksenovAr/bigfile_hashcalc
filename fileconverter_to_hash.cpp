@@ -1,22 +1,26 @@
 #include "fileconverter_to_hash.h"
-#include "cmd_parser.h"
-#include "custom_exceptions.h"
-#include "block_info.h"
-
 #include <openssl/md5.h>
 #include <algorithm>
-#include <iterator>
-#include <iomanip>
 #include <sstream>
 #include <functional>
 #include <boost/iostreams/device/mapped_file.hpp>
+
+#include "cmd_parser.h"
+#include "custom_exceptions.h"
+#include "block_info.h"
 
 using namespace boost::iostreams;
 
 uintmax_t block_info::m_file_lenght = 0;
 uintmax_t block_info::m_block_size = 0;
-bool ready = false;
 
+fileconverter_to_hash::fileconverter_to_hash()
+	:m_block_size(0),
+	m_ready(false),
+	m_count_of_threads(0)
+{
+
+}
 void fileconverter_to_hash::doWork(const cdm_parser& parser)
 {
 	unsigned char result[MD5_DIGEST_LENGTH];
@@ -33,22 +37,21 @@ void fileconverter_to_hash::doWork(const cdm_parser& parser)
 		try
 		{
 			info.reset(new block_info(thread_counter, file));
+
+			info->m_thread = std::thread([self = (this), p = info.get()]() { self->block_reading(p); });
 		}
 		catch (std::bad_alloc&)
 		{
-			//throw Imp::ResourceLimitation("Out of memory");
-			std::cout << "Error1";
+			throw fileconverter_exception( 1002, "File to hash converter", "Resource allocation error!" );
 		}
 		catch (boost::system::system_error& e)
 		{
-			std::cout << "Error1";
+			throw fileconverter_exception( 1002, "system_error", e.what() );
 		}
 		catch (std::exception& e)
 		{
-			std::cout << "Error2";
+			throw;
 		}
-
-		info->m_thread = std::thread([self = (this), p = info.get()]() { self->block_reading(p); });
 
 		// Don't destroy a joinable thread. The thread will end soon anyway, so we can just detach it.
 		if (info->m_thread.joinable())
@@ -79,11 +82,18 @@ void fileconverter_to_hash::block_reading(block_info* p_info)
 		std::copy(p_info->m_file.begin()+i_offset, p_info->m_file.begin()+i_offset+i_balance, block_data_array.get());
 		MD5( (unsigned char*) block_data_array.get(), p_info->m_block_size, p_info->result);
 	}
+	// Convert to hex
+	std::ostringstream ret;
+	for (uint32_t i = 0; i < MD5_DIGEST_LENGTH; ++i)
+	{
+		ret << std::hex << std::setfill('0') << std::setw(2) << std::uppercase  << (int) p_info->result[i];
+	}
+	p_info->hash_in_hex = ret.str();
 
 	--m_countdown_counter_of_threads;
 	if (m_countdown_counter_of_threads == 0)
 	{
-		ready = true;
+		m_ready = true;
 		cv.notify_all();
 	}
 }
@@ -96,14 +106,12 @@ void fileconverter_to_hash::add_handler(handler_t& h)
 void fileconverter_to_hash::md5data_to_string()
 {
 	std::unique_lock<std::mutex> lck(mut);
-	cv.wait( lck, [] () { return ready; });
+	cv.wait( lck, [=] () { return m_ready; });
 
 	input_stream_list::iterator it = m_threads_container.begin();
 	for (; it !=  m_threads_container.end(); ++it)
 	{
-		m_all_block_hash += std::to_string( (*it)->m_number );
-		m_all_block_hash += "------------";
-		m_all_block_hash += std::string(reinterpret_cast<char*>((*it)->result));
+		m_all_block_hash += (*it)->hash_in_hex;
 	}
 
 	m_output_fun(m_all_block_hash);
@@ -112,5 +120,5 @@ void fileconverter_to_hash::md5data_to_string()
 fileconverter_to_hash::~fileconverter_to_hash()
 {
 	file.close();
-	std::cout << " Dtor singltone ! \n" ;
+	//std::cout << " Dtor singltone ! \n" ;
 }
