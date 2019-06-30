@@ -74,10 +74,10 @@ void fileconverter_to_hash::block_reading(block_info* p_info)
 	{
 		// balance less then block size
 		// by the condition increase size till block_size and fill data with zero
-	//	static std::vector<unsigned char> vec( p_info->m_block_size, '0');
-	//	std::copy( p_info->m_file.begin()+i_offset, p_info->m_file.end(), vec.begin());
-
-	//	MD5( (unsigned char*) *vec.begin(), p_info->m_block_size, p_info->result);
+		auto block_data_array = std::unique_ptr<unsigned char[]>{ new unsigned char[p_info->m_block_size] };
+		memset(block_data_array.get(), '0', p_info->m_block_size);
+		std::copy(p_info->m_file.begin()+i_offset, p_info->m_file.begin()+i_offset+i_balance, block_data_array.get());
+		MD5( (unsigned char*) block_data_array.get(), p_info->m_block_size, p_info->result);
 	}
 
 	--m_countdown_counter_of_threads;

@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
+#include <vector>
 #include <thread>
 #include <condition_variable>
 #include <boost/config.hpp>
