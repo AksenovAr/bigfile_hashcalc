@@ -65,7 +65,6 @@ void fileconverter_to_hash::doWork(const cdm_parser& parser)
 
 void fileconverter_to_hash::block_reading(block_info* p_info)
 {
-	std::unique_lock<std::mutex> lck(mut);
 	uintmax_t i_offset = p_info->m_block_size * p_info->m_number;
 	uintmax_t i_balance = block_info::m_file_lenght - i_offset;
 
@@ -93,6 +92,7 @@ void fileconverter_to_hash::block_reading(block_info* p_info)
 	--m_countdown_counter_of_threads;
 	if (m_countdown_counter_of_threads == 0)
 	{
+		std::unique_lock<std::mutex> lck(mut);
 		m_ready = true;
 		cv.notify_all();
 	}
