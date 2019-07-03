@@ -20,6 +20,7 @@ struct block_info
 		:m_number(number),
 		m_file(file)
 	{
+		memset(result, '0', MD5_DIGEST_LENGTH);
 	}
 
 	//! Destructor
@@ -34,7 +35,6 @@ struct block_info
 	block_info& operator= (block_info const&&) = delete;
 
 	unsigned char result[MD5_DIGEST_LENGTH];
-	std::string hash_in_hex;
 
 	uintmax_t m_number;
 	static uintmax_t m_block_size;

@@ -25,11 +25,13 @@ void fileconverter_to_hash::doWork(const cdm_parser& parser)
 {
 	unsigned char result[MD5_DIGEST_LENGTH];
 	const std::string s_path_to_input_file = parser.get_input_file_path();
+
 	block_info::m_file_lenght = std::distance(std::istreambuf_iterator<char>(std::ifstream(s_path_to_input_file).rdbuf()), {});
-	block_info::m_block_size = parser.get_block_size();
-	m_count_of_threads = m_countdown_counter_of_threads = block_info::m_file_lenght / block_info::m_block_size;
 
 	file.open(s_path_to_input_file, block_info::m_file_lenght);
+
+	block_info::m_block_size = parser.get_block_size();
+	m_count_of_threads = m_countdown_counter_of_threads = block_info::m_file_lenght / block_info::m_block_size;
 
 	for (uintmax_t thread_counter = 0; thread_counter <= m_count_of_threads; thread_counter++)
 	{
@@ -68,27 +70,34 @@ void fileconverter_to_hash::block_reading(block_info* p_info)
 	uintmax_t i_offset = p_info->m_block_size * p_info->m_number;
 	uintmax_t i_balance = block_info::m_file_lenght - i_offset;
 
-	if (i_balance >= p_info->m_block_size)
+	try
 	{
-		MD5((unsigned char*) p_info->m_file.data() + i_offset, p_info->m_block_size, p_info->result);
+		if (i_balance >= p_info->m_block_size)
+		{
+			MD5((unsigned char*) p_info->m_file.data() + i_offset, p_info->m_block_size, p_info->result);
+		}
+		else
+		{
+			// balance less then block size
+			// by the condition increase size till block_size and fill data with zero
+			auto block_data_array = std::unique_ptr<unsigned char[]>{ new unsigned char[p_info->m_block_size] };
+			memset(block_data_array.get(), '0', p_info->m_block_size);
+			std::copy(p_info->m_file.begin()+i_offset, p_info->m_file.begin()+i_offset+i_balance, block_data_array.get());
+			MD5( (unsigned char*) block_data_array.get(), p_info->m_block_size, p_info->result);
+		}
 	}
-	else
+	catch (std::bad_alloc&)
 	{
-		// balance less then block size
-		// by the condition increase size till block_size and fill data with zero
-		auto block_data_array = std::unique_ptr<unsigned char[]>{ new unsigned char[p_info->m_block_size] };
-		memset(block_data_array.get(), '0', p_info->m_block_size);
-		std::copy(p_info->m_file.begin()+i_offset, p_info->m_file.begin()+i_offset+i_balance, block_data_array.get());
-		MD5( (unsigned char*) block_data_array.get(), p_info->m_block_size, p_info->result);
+		throw fileconverter_exception( 2002, "block_reading", "Resource allocation error!" );
 	}
-	// Convert to hex
-	std::ostringstream ret;
-	for (uint32_t i = 0; i < MD5_DIGEST_LENGTH; ++i)
+	catch (boost::system::system_error& e)
 	{
-		ret << std::hex << std::setfill('0') << std::setw(2) << std::uppercase  << (int) p_info->result[i];
+		throw fileconverter_exception( 2003, "block_reading", e.what() );
 	}
-	p_info->hash_in_hex = ret.str();
-
+	catch (std::exception& e)
+	{
+		throw;
+	}
 	--m_countdown_counter_of_threads;
 	if (m_countdown_counter_of_threads == 0)
 	{
@@ -108,17 +117,21 @@ void fileconverter_to_hash::md5data_to_string()
 	std::unique_lock<std::mutex> lck(mut);
 	cv.wait( lck, [=] () { return m_ready; });
 
+	std::ostringstream ret;
 	input_stream_list::iterator it = m_threads_container.begin();
 	for (; it !=  m_threads_container.end(); ++it)
 	{
-		m_all_block_hash += (*it)->hash_in_hex;
+		// Convert to hex
+		for (uint32_t i = 0; i < MD5_DIGEST_LENGTH; ++i)
+		{
+			ret << std::hex << std::setfill('0') << std::setw(2) << std::uppercase  << (int)  (*it)->result[i];
+		}
 	}
 
-	m_output_fun(m_all_block_hash);
+	m_output_fun(ret);
 }
 
 fileconverter_to_hash::~fileconverter_to_hash()
 {
 	file.close();
-	//std::cout << " Dtor singltone ! \n" ;
 }

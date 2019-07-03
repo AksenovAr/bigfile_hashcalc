@@ -1,0 +1,7 @@
+block_info.h
+cmd_parser.h
+custom_exceptions.cpp
+custom_exceptions.h
+fileconverter_to_hash.cpp
+fileconverter_to_hash.h
+main.cpp

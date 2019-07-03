@@ -21,7 +21,7 @@ using namespace boost::multi_index;
 
 class cdm_parser;
 
-typedef std::function<void (std::string&)> handler_t;
+typedef std::function<void (std::ostringstream&)> handler_t;
 
 class fileconverter_to_hash
 {

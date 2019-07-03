@@ -13,12 +13,10 @@ int main(int argc, const char *argv[])
 	try
 	{
 		cdm_parser parser(argc, argv);
-
-		handler_t f = [&](std::string& s)
+		handler_t f = [&](std::ostringstream& s)
 		{
-			//std::cout << s << std::endl;
-			std::ofstream out(parser.get_ouput_file_path());
-			out << s;
+			std::ofstream out(parser.get_ouput_file_path(), std::ofstream::out | std::ofstream::binary);
+			out << s.str();
 			out.close();
 		};
 
