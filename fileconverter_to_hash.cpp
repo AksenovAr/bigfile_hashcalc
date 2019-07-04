@@ -9,6 +9,8 @@
 #include "custom_exceptions.h"
 #include "block_info.h"
 
+#define MAX_RUNNING_THREAD 100
+
 using namespace boost::iostreams;
 
 uintmax_t block_info::m_file_lenght = 0;
@@ -16,7 +18,6 @@ uintmax_t block_info::m_block_size = 0;
 
 fileconverter_to_hash::fileconverter_to_hash()
 	:m_block_size(0),
-	m_ready(false),
 	m_count_of_threads(0)
 {
 
@@ -33,14 +34,22 @@ void fileconverter_to_hash::doWork(const cdm_parser& parser)
 	block_info::m_block_size = parser.get_block_size();
 	m_count_of_threads = m_countdown_counter_of_threads = block_info::m_file_lenght / block_info::m_block_size;
 
-	for (uintmax_t thread_counter = 0; thread_counter <= m_count_of_threads; thread_counter++)
+	for (uintmax_t thread_counter = 0; thread_counter <= m_count_of_threads;)
 	{
 		std::unique_ptr< block_info > info;
 		try
 		{
+			int32_t i_running_thread_count = thread_counter - (m_count_of_threads - m_countdown_counter_of_threads);
+			//std::cout << "running thread count = " << i_running_thread_count << std::endl;
+			if (i_running_thread_count > MAX_RUNNING_THREAD)
+			{
+				continue;
+			}
+
 			info.reset(new block_info(thread_counter, file));
 
 			info->m_thread = std::thread([self = (this), p = info.get()]() { self->block_reading(p); });
+
 		}
 		catch (std::bad_alloc&)
 		{
@@ -60,6 +69,8 @@ void fileconverter_to_hash::doWork(const cdm_parser& parser)
 			info->m_thread.detach();
 
 		m_threads_container.insert(std::move(info));
+
+		thread_counter++;
 	}
 
 	md5data_to_string();
@@ -102,7 +113,6 @@ void fileconverter_to_hash::block_reading(block_info* p_info)
 	if (m_countdown_counter_of_threads == 0)
 	{
 		std::unique_lock<std::mutex> lck(mut);
-		m_ready = true;
 		cv.notify_all();
 	}
 }
@@ -115,7 +125,7 @@ void fileconverter_to_hash::add_handler(handler_t& h)
 void fileconverter_to_hash::md5data_to_string()
 {
 	std::unique_lock<std::mutex> lck(mut);
-	cv.wait( lck, [=] () { return m_ready; });
+	cv.wait( lck, [=] () { return m_countdown_counter_of_threads==0; });
 
 	std::ostringstream ret;
 	input_stream_list::iterator it = m_threads_container.begin();

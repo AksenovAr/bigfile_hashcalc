@@ -61,7 +61,6 @@ class fileconverter_to_hash
 
 	input_stream_list m_threads_container;
 	boost::atomic< uint32_t > m_countdown_counter_of_threads;
-	bool m_ready;
 
 	uint32_t m_count_of_threads;
 	std::mutex mut;
